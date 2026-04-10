@@ -14,7 +14,7 @@ oracle-aq-demo/
 
 ## Run
 
-### 1. Start Oracle
+### 1. Start Oracle and java consumer
 ```bash
 cd docker && docker compose up -d
 # Wait ~2 min for Oracle to be ready
@@ -22,22 +22,16 @@ cd docker && docker compose up -d
 # To reset: docker compose down -v && docker compose up -d
 ```
 
-### 2. Start Java consumer
-```bash
-cd java-consumer
-mvn compile dependency:build-classpath -Dmdep.outputFile=/tmp/cp.txt -q
-java -cp "target/classes:$(cat /tmp/cp.txt)" com.demo.aq.OrderConsumer
-```
-
 > Note: `mvn exec:java` does not work due to classloader isolation issues with Oracle AQ JMS inside Maven's JVM. Use the forked `java` command above instead.
 
-### 3. Test — insert a row
-```sql
--- connect as demo/demo to FREEPDB1
-INSERT INTO demo.orders (customer, product, quantity, status)
-VALUES ('Alice', 'Widget', 3, 'NEW');
-COMMIT;
+### 2. Test — insert a row
+```sh
+make insert-order
 ```
 
 The Java consumer will print the JSON payload immediately.
-# oracle-aq-demo
+
+```text
+Received: {"op":"INSERT","id":3,"customer":"Alice","product":"Widget","quantity":3,"status":"NEW"}
+```
+

@@ -1,0 +1,29 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    container_name: oracle-aq
+    environment:
+      ORACLE_PASSWORD: oracle
+      APP_USER: demo
+      APP_USER_PASSWORD: demo
+    ports:
+      - "1521:1521"
+    volumes:
+      - ../sql/00_sys_grants.sql:/docker-entrypoint-initdb.d/00_sys_grants.sql
+      - ../sql/01_setup.sql:/docker-entrypoint-initdb.d/01_setup.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  java-consumer:
+    build:
+      context: ../java-consumer
+    container_name: aq-consumer
+    environment:
+      DB_URL: jdbc:oracle:thin:@oracle:1521/FREEPDB1
+    depends_on:
+      oracle:
+        condition: service_healthy
+    restart: on-failure
