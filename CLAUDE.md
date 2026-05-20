@@ -9,8 +9,12 @@ Demo of **table replication via Oracle Advanced Queuing (AQ)**. SQL triggers on 
 ## Commands
 
 ```bash
-# Start Oracle Free 23c + Java consumer
+# Start Oracle Free 23c + Java consumer (full Docker mode)
 make up
+
+# Start only Oracle in the background, then run consumer locally
+make db
+make consumer
 
 # Stop and remove containers
 make down
@@ -21,8 +25,6 @@ make insert-order
 # Connect manually via SQL*Plus
 sqlplus demo/demo@//localhost:1521/FREEPDB1
 ```
-
-> **Note**: `mvn exec:java` does NOT work for the Java consumer due to classloader isolation with Oracle AQ JMS. Always run via Docker.
 
 ## Architecture
 

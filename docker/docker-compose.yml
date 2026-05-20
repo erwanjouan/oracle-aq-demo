@@ -16,14 +16,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 10
-
-  java-consumer:
-    build:
-      context: ../java-consumer
-    container_name: aq-consumer
-    environment:
-      DB_URL: jdbc:oracle:thin:@oracle:1521/FREEPDB1
-    depends_on:
-      oracle:
-        condition: service_healthy
-    restart: on-failure
