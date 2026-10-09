@@ -34,7 +34,16 @@ BEGIN
             || ' old_msgid=' || RAWTOHEX(rec.msgid)
             || ' new_msgid=' || RAWTOHEX(v_msgid));
     END LOOP;
-    COMMIT;
+
+    COMMIT; -- enqueue is now durable
+
+    -- purge only the OLD expired rows, never touch state=0 (the ones you just enqueued)
+    DBMS_AQADM.PURGE_QUEUE_TABLE(
+        queue_table     => 'EKBOA_ADM.ACCNTEVNT_CLIENT_QT',
+        purge_condition => 'qtview.state = 3',
+        purge_options   => DBMS_AQADM.AQ$_PURGE_OPTIONS_T(block => TRUE)
+    );
+
     DBMS_OUTPUT.PUT_LINE('Total re-enqueued (deduped): ' || v_count);
 END;
 /
