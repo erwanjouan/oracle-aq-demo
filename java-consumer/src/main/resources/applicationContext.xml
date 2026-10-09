@@ -1,35 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:jms="http://www.springframework.org/schema/jms"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-jms="http://www.springframework.org/schema/integration/jms"
        xsi:schemaLocation="
            http://www.springframework.org/schema/beans
            https://www.springframework.org/schema/beans/spring-beans.xsd
-           http://www.springframework.org/schema/jms
-           https://www.springframework.org/schema/jms/spring-jms.xsd
            http://www.springframework.org/schema/context
-           https://www.springframework.org/schema/context/spring-context.xsd">
+           https://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/integration
+           https://www.springframework.org/schema/integration/spring-integration.xsd
+           http://www.springframework.org/schema/integration/jms
+           https://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd">
 
     <context:property-placeholder/>
+    <context:component-scan base-package="com.demo.aq"/>
 
-    <bean id="dataSource" class="oracle.jdbc.pool.OracleDataSource">
+    <bean id="dataSource" class="oracle.jdbc.xa.client.OracleXADataSource">
         <property name="URL" value="${DB_URL:jdbc:oracle:thin:@localhost:1521/FREEPDB1}"/>
         <property name="user" value="demo"/>
         <property name="password" value="demo"/>
     </bean>
 
-    <bean id="connectionFactory" class="com.demo.aq.AQConnectionFactoryBean">
+    <bean id="aqXAConnectionFactory" class="com.demo.aq.AQConnectionFactoryBean">
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
-    <bean id="orderMessageListener" class="com.demo.aq.OrderMessageListener"/>
+    <bean id="connectionFactory" class="com.atomikos.jms.AtomikosConnectionFactoryBean"
+          init-method="init" destroy-method="close">
+        <property name="uniqueResourceName" value="oracle-aq"/>
+        <property name="xaConnectionFactory" ref="aqXAConnectionFactory"/>
+    </bean>
 
-    <jms:listener-container connection-factory="connectionFactory"
-                            destination-type="queue"
-                            cache="consumer"
-                            concurrency="1">
-        <jms:listener destination="demo.orders_queue" ref="orderMessageListener"/>
-    </jms:listener-container>
+    <bean id="atomikosTransactionManager" class="com.atomikos.icatch.jta.UserTransactionManager"
+          init-method="init" destroy-method="close">
+        <property name="forceShutdown" value="false"/>
+    </bean>
+
+    <bean id="atomikosUserTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+        <property name="transactionTimeout" value="300"/>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+        <property name="transactionManager" ref="atomikosTransactionManager"/>
+        <property name="userTransaction" ref="atomikosUserTransaction"/>
+    </bean>
+
+    <bean id="listenerContainer"
+          class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destinationName" value="demo.orders_queue"/>
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="cacheLevel"
+                  value="#{T(org.springframework.jms.listener.DefaultMessageListenerContainer).CACHE_NONE}"/>
+        <property name="concurrentConsumers" value="1"/>
+        <property name="sessionTransacted" value="true"/>
+    </bean>
+
+    <int:channel id="inputChannel"/>
+
+    <int-jms:message-driven-channel-adapter id="jmsInbound"
+                                            container="listenerContainer"
+                                            channel="inputChannel"/>
+
+    <int:service-activator input-channel="inputChannel"
+                           ref="orderLogger"
+                           method="log"/>
 
 </beans>

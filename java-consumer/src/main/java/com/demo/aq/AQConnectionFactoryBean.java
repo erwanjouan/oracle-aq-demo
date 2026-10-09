@@ -3,25 +3,25 @@ package com.demo.aq;
 import oracle.jms.AQjmsFactory;
 import org.springframework.beans.factory.FactoryBean;
 
-import javax.jms.QueueConnectionFactory;
-import javax.sql.DataSource;
+import javax.jms.XAQueueConnectionFactory;
+import javax.sql.XADataSource;
 
-public class AQConnectionFactoryBean implements FactoryBean<QueueConnectionFactory> {
+public class AQConnectionFactoryBean implements FactoryBean<XAQueueConnectionFactory> {
 
-    private DataSource dataSource;
+    private XADataSource dataSource;
 
-    public void setDataSource(DataSource dataSource) {
+    public void setDataSource(XADataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     @Override
-    public QueueConnectionFactory getObject() throws Exception {
-        return AQjmsFactory.getQueueConnectionFactory(dataSource, false);
+    public XAQueueConnectionFactory getObject() throws Exception {
+        return AQjmsFactory.getXAQueueConnectionFactory(dataSource, false);
     }
 
     @Override
     public Class<?> getObjectType() {
-        return QueueConnectionFactory.class;
+        return XAQueueConnectionFactory.class;
     }
 
     @Override

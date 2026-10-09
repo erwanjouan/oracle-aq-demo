@@ -49,6 +49,18 @@
             <artifactId>spring-jms</artifactId>
             <version>5.3.39</version>
         </dependency>
+        <!-- Atomikos JTA/XA transaction manager -->
+        <dependency>
+            <groupId>com.atomikos</groupId>
+            <artifactId>transactions-jms</artifactId>
+            <version>5.0.9</version>
+        </dependency>
+        <!-- Spring Integration -->
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-jms</artifactId>
+            <version>5.5.20</version>
+        </dependency>
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
